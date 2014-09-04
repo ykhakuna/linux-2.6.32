@@ -23,6 +23,7 @@
 #include <linux/i2c.h>
 #include <linux/i2c/at24.h>
 
+
 /*
  * I2C EEPROMs from most vendors are inexpensive and mostly interchangeable.
  * Differences between different vendor product lines (like Atmel AT24C or
@@ -428,7 +429,30 @@ static ssize_t at24_macc_write(struct memory_accessor *macc, const char *buf,
 	return at24_write(at24, buf, offset, count);
 }
 
-/*-------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------
+static char buf_dev[100];
+static int at24_char_read(struct file *filp, char __user *buf, size_t count, loff_t *offp)
+{
+	int read_count;
+	read_count = at24_read(at24, buf_dev, offset, count);
+	copy_to_user(buf,buf_dev,read_count);
+}
+
+static int at24_char_write(struct file *filp, char __user *buf, size_t count, loff_t *offp)
+{
+	int write_count;
+	write_count = at24_write(at24, buf_dev, offset, count);
+	copy_from_user(buf_dev,buf,write_count);
+}
+
+static int major;
+static struct class at24_class;
+static struct file_operations at24_ops = {
+    .owner=THIS_MODULE,
+    .read=at24_char_read,
+    .write=at24_char_write,   
+};
+*/
 
 static int at24_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
@@ -560,6 +584,11 @@ static int at24_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	if (err)
 		goto err_clients;
 
+/*create char device
+	major = register_chrdev(0,"at24c04", &at24_ops);
+	at24_class = class_create(THIS_MODULE, "at24_class");
+    	err = device_create(at24_class, NULL, MKDEV(major, 0), NULL,"at24_device");*/
+    
 	i2c_set_clientdata(client, at24);
 
 	dev_info(&client->dev, "%zu byte %s EEPROM %s\n",

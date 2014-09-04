@@ -42,6 +42,8 @@
 #include <linux/mtd/partitions.h>
 #include <linux/dm9000.h>
 #include <linux/mmc/host.h>
+#include <linux/i2c.h>
+#include <linux/i2c/at24.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
@@ -362,6 +364,19 @@ static void __init mini2440_map_io(void)
 	s3c24xx_init_uarts(mini2440_uartcfgs, ARRAY_SIZE(mini2440_uartcfgs));
 }
 
+/******************at24c08*****************/
+static struct at24_platform_data at24c08 ={
+	.byte_len = SZ_8K / 8,   /* eeprom的存储大小,单位Byte */
+	.page_size        = 16,      /* 页大小 Byte */
+};
+ 
+static struct i2c_board_info mini2440_i2c_devs[] __initdata = {
+	{
+		I2C_BOARD_INFO("24c08",0x50),  // 24c08设备名，0x50设备地址 
+		.platform_data= &at24c08, // 赋值给client->dev->platform_data 
+	}
+};
+/*******************************/
 static void __init mini2440_machine_init(void)
 {
 #if defined (LCD_WIDTH)
@@ -375,6 +390,10 @@ static void __init mini2440_machine_init(void)
 	s3c_device_sdi.dev.platform_data = &mini2440_mmc_cfg;
 	platform_add_devices(mini2440_devices, ARRAY_SIZE(mini2440_devices));
 	s3c_pm_init();
+
+	i2c_register_board_info(0,mini2440_i2c_devs, ARRAY_SIZE(mini2440_i2c_devs)); 
+
+	/* busnum = 0,busnum是适配器编号，用来识别从设备使用的哪个适配器 */      
 }
 
 MACHINE_START(MINI2440, "FriendlyARM Mini2440 development board")
